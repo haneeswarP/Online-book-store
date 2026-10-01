@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookNest - Online Book Store</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;color:#172033}
+header{background:linear-gradient(135deg,#182848,#56358c);color:#fff;position:sticky;top:0;z-index:10;box-shadow:0 4px 18px #0002}
+.nav{max-width:1200px;margin:auto;padding:15px 20px;display:flex;align-items:center;gap:12px}.logo{font-size:25px;font-weight:800;margin-right:auto}.logo span{color:#ffd166}
+.nav button,.add,.checkout{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:bold}.nav button{background:#ffffff18;color:#fff;border:1px solid #ffffff35}
+.hero{max-width:1200px;margin:28px auto;padding:0 20px}.hero-box{background:linear-gradient(135deg,#fff,#eeeaff);border-radius:22px;padding:42px;display:flex;justify-content:space-between;align-items:center}
+.hero h1{font-size:42px;margin:0 0 12px}.hero p{color:#687286;line-height:1.6;max-width:600px}.hero-icon{font-size:90px}.add{background:#56358c;color:#fff}
+.container{max-width:1200px;margin:auto;padding:0 20px}.controls{display:flex;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+input,select{padding:12px;border:1px solid #d7dce7;border-radius:9px;background:#fff}.search{flex:1;min-width:220px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.card{background:#fff;border:1px solid #e9ebf1;border-radius:15px;overflow:hidden;box-shadow:0 6px 20px #18284812}
+.cover{height:210px;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;padding:25px}.cover b{font-size:25px}
+.info{padding:16px}.info h3{margin:0 0 6px}.author{font-size:14px;color:#727b8d}.tag{display:inline-block;margin:10px 0;background:#eeeaff;color:#56358c;border-radius:6px;padding:5px 8px;font-size:12px}
+.bottom{display:flex;align-items:center;justify-content:space-between}.price{font-weight:bold;font-size:18px}.empty{background:#fff;border-radius:14px;padding:45px;text-align:center;color:#777}
+.overlay{display:none;position:fixed;inset:0;background:#0007;z-index:20}.drawer{position:absolute;right:0;top:0;height:100%;width:min(430px,95%);background:#fff;padding:22px;overflow:auto}
+.drawer-head{display:flex;justify-content:space-between;align-items:center}.close{border:0;border-radius:8px;padding:8px;cursor:pointer}
+.cart-item{display:grid;grid-template-columns:58px 1fr auto;gap:12px;padding:15px 0;border-bottom:1px solid #eee}.mini{height:68px;border-radius:8px;color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;font-size:10px;padding:5px}
+.qty{display:flex;gap:7px;align-items:center;margin-top:7px}.qty button{border:1px solid #ddd;background:#fff;border-radius:6px;width:27px;height:27px;cursor:pointer}.total{font-size:21px;font-weight:bold;margin:20px 0}.checkout{width:100%;background:#182848;color:#fff}
+footer{margin-top:50px;background:#182848;color:#ccd4e4;text-align:center;padding:28px}.toast{display:none;position:fixed;bottom:25px;left:50%;transform:translateX(-50%);background:#182848;color:#fff;padding:12px 18px;border-radius:9px;z-index:50}
+@media(max-width:950px){.grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:32px}.hero-icon{font-size:60px}}@media(max-width:480px){.grid{grid-template-columns:1fr}.hero-box{padding:28px}.hero-icon{display:none}}
+</style>
+</head>
+<body>
+
+<header><div class="nav">
+<div class="logo">Book<span>Nest</span> 📚</div>
+<button onclick="browse()">Browse Books</button>
+<button onclick="openCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+</div></header>
+
+<section class="hero"><div class="hero-box">
+<div><h1>Find your next great read.</h1>
+<p>Discover technology, fiction, business, science and self-development books. Add your favourites to the cart and place a demo order.</p>
+<button class="add" onclick="browse()">Explore Collection</button></div>
+<div class="hero-icon">📚</div>
+</div></section>
+
+<main class="container" id="books">
+<div class="controls">
+<input class="search" id="search" placeholder="Search books, authors or categories...">
+<select id="category"><option>All</option><option>Technology</option><option>Fiction</option><option>Business</option><option>Self Development</option><option>Science</option></select>
+<select id="sort"><option value="default">Featured</option><option value="low">Price: Low to High</option><option value="high">Price: High to Low</option><option value="name">Title: A-Z</option></select>
+</div>
+<div class="grid" id="bookGrid"></div><div class="empty" id="empty" style="display:none">No books found.</div>
+</main>
+
+<footer><strong>BookNest Online Book Store</strong><br>Single-file full-stack frontend prototype.</footer>
+
+<div class="overlay" id="overlay"><aside class="drawer">
+<div class="drawer-head"><h2>Your Cart</h2><button class="close" onclick="closeCart()">✕</button></div>
+<div id="cartItems"></div><div class="total">Total: ₹<span id="cartTotal">0</span></div>
+<button class="checkout" onclick="checkout()">Place Demo Order</button>
+</aside></div><div class="toast" id="toast"></div>
+
+<script>
+const books=[
+{id:1,title:"Clean Code",author:"Robert C. Martin",cat:"Technology",price:599,cover:"Clean Code",bg:"#263238"},
+{id:2,title:"The Alchemist",author:"Paulo Coelho",cat:"Fiction",price:349,cover:"The Alchemist",bg:"#8a5a2b"},
+{id:3,title:"Atomic Habits",author:"James Clear",cat:"Self Development",price:499,cover:"Atomic Habits",bg:"#315d70"},
+{id:4,title:"Psychology of Money",author:"Morgan Housel",cat:"Business",price:449,cover:"Psychology of Money",bg:"#355c4a"},
+{id:5,title:"Artificial Intelligence",author:"Stuart Russell",cat:"Technology",price:799,cover:"Artificial Intelligence",bg:"#49357a"},
+{id:6,title:"The Great Gatsby",author:"F. Scott Fitzgerald",cat:"Fiction",price:299,cover:"The Great Gatsby",bg:"#a33b50"},
+{id:7,title:"Zero to One",author:"Peter Thiel",cat:"Business",price:399,cover:"Zero to One",bg:"#344b80"},
+{id:8,title:"A Brief History of Time",author:"Stephen Hawking",cat:"Science",price:549,cover:"History of Time",bg:"#263b62"},
+{id:9,title:"Deep Work",author:"Cal Newport",cat:"Self Development",price:429,cover:"Deep Work",bg:"#51452e"},
+{id:10,title:"Java Complete Reference",author:"Herbert Schildt",cat:"Technology",price:699,cover:"Java",bg:"#9b392e"},
+{id:11,title:"Rich Dad Poor Dad",author:"Robert Kiyosaki",cat:"Business",price:379,cover:"Rich Dad Poor Dad",bg:"#376a70"},
+{id:12,title:"The Martian",author:"Andy Weir",cat:"Science",price:399,cover:"The Martian",bg:"#a14b32"}
+];
+let cart=JSON.parse(localStorage.getItem("booknest_cart")||"[]");
+
+function save(){localStorage.setItem("booknest_cart",JSON.stringify(cart))}
+function render(){
+let q=search.value.toLowerCase().trim(),c=category.value,s=sort.value;
+let list=books.filter(b=>(c==="All"||b.cat===c)&&(b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)||b.cat.toLowerCase().includes(q)));
+if(s==="low")list.sort((a,b)=>a.price-b.price);if(s==="high")list.sort((a,b)=>b.price-a.price);if(s==="name")list.sort((a,b)=>a.title.localeCompare(b.title));
+bookGrid.innerHTML=list.map(b=>`<article class="card"><div class="cover" style="background:${b.bg}"><b>${safe(b.cover)}</b></div><div class="info"><h3>${safe(b.title)}</h3><div class="author">by ${safe(b.author)}</div><span class="tag">${safe(b.cat)}</span><div class="bottom"><span class="price">₹${b.price}</span><button class="add" onclick="add(${b.id})">Add to Cart</button></div></div></article>`).join("");
+empty.style.display=list.length?"none":"block";
+}
+function add(id){let x=cart.find(i=>i.id===id);x?x.qty++:cart.push({id,qty:1});save();renderCart();toast("Book added to cart")}
+function qty(id,d){let x=cart.find(i=>i.id===id);if(!x)return;x.qty+=d;if(x.qty<1)cart=cart.filter(i=>i.id!==id);save();renderCart()}
+function renderCart(){let count=cart.reduce((a,x)=>a+x.qty,0),total=0;cartCount.textContent=count;if(!cart.length){cartItems.innerHTML='<div class="empty">Your cart is empty.</div>';cartTotal.textContent=0;return}
+cartItems.innerHTML=cart.map(x=>{let b=books.find(y=>y.id===x.id);total+=b.price*x.qty;return `<div class="cart-item"><div class="mini" style="background:${b.bg}">${safe(b.cover)}</div><div><b>${safe(b.title)}</b><br><small>₹${b.price}</small><div class="qty"><button onclick="qty(${b.id},-1)">−</button>${x.qty}<button onclick="qty(${b.id},1)">+</button></div></div><b>₹${b.price*x.qty}</b></div>`}).join("");cartTotal.textContent=total}
+function openCart(){overlay.style.display="block";renderCart()}function closeCart(){overlay.style.display="none"}
+function checkout(){if(!cart.length)return toast("Your cart is empty");if(confirm("Place demo order for ₹"+cartTotal.textContent+"?")){cart=[];save();renderCart();closeCart();toast("Order placed successfully!")}}
+function browse(){books.scrollIntoView({behavior:"smooth"})}
+function toast(m){toastEl=document.getElementById("toast");toastEl.textContent=m;toastEl.style.display="block";setTimeout(()=>toastEl.style.display="none",1800)}
+function safe(v){return v.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+search.addEventListener("input",render);category.addEventListener("change",render);sort.addEventListener("change",render);
+overlay.addEventListener("click",e=>{if(e.target===overlay)closeCart()});render();renderCart();
+</script>
+</body>
+</html>
